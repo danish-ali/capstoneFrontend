@@ -78,16 +78,13 @@ const NewsEmotionsSingleGraph = () => {
         }
       },
       y: {
-        beginAtZero: true,
+        beginAtZero: false, // Remove the beginAtZero option
+        min: -1, // Set the minimum value of the scale to -1
+        max: 1, // Set the maximum value of the scale to 1
         ticks: {
+          stepSize: 0.2, // Set the step size of the ticks to 0.2
           callback: (value) => {
-            if (value === 0) {
-              return 'Neutral';
-            } else if (value < 0) {
-              return 'Negative';
-            } else {
-              return 'Positive';
-            }
+            return value.toFixed(2);
           }
         }
       }
@@ -99,6 +96,7 @@ const NewsEmotionsSingleGraph = () => {
       }
     }
   };
+  
 
   return (
     <div>
