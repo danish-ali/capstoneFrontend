@@ -1,13 +1,13 @@
 import React from 'react';
 
-import SentimentGraph from './SentimentGraph';
+import NewsEmotionsSingleGraph from './NewsEmotionsSingleGraph';
 
 const App = () => {
   return (
     <div>
       <h1>News Graph</h1>
       
-      <SentimentGraph />
+      <NewsEmotionsSingleGraph />
     </div>
   );
 };
