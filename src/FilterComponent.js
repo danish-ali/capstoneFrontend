@@ -1,4 +1,3 @@
-/** working graph to display multiple news channels graph */
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, LineController, PointElement, LineElement, TimeScale, TimeSeriesScale } from 'chart.js';
@@ -28,33 +27,20 @@ const NewsEmotionsSingleGraph = () => {
     fetchData();
   }, []);
 
-  const createChartData = () => {
-    if (!data) return null;
+  const handleFilter = (filterData) => {
+    // Apply the filtering logic based on the filterData
+    // Update the filteredData state with the filtered data
 
-    const chartData = {
-      labels: [], // Dates
-      datasets: [] // Emotion datasets for each news source
-    };
+    // Example filtering logic:
+    const filtered = data.filter((item) => {
+      const matchDate = filterData.date ? dayjs(item.date).format('YYYY-MM-DD') === filterData.date : true;
+      const matchNewsSource = filterData.newsSource ? item.newsSource === filterData.newsSource : true;
+      const matchCompound = filterData.compound ? item.compound === parseFloat(filterData.compound) : true;
 
-    for (const newsSource in data) {
-      const emotionData = data[newsSource];
+      return matchDate && matchNewsSource && matchCompound;
+    });
 
-      const emotionDataset = {
-        label: newsSource,
-        data: emotionData.compound,
-        fill: false,
-        borderColor: getRandomColor(),
-        tension: 0.1
-      };
-
-      chartData.datasets.push(emotionDataset);
-    }
-
-    const firstNewsSource = Object.keys(data)[0];
-    const firstEmotionData = data[firstNewsSource];
-    chartData.labels = firstEmotionData.date.map(date => dayjs(date).format('YYYY-MM-DD'));
-
-    return chartData;
+    setFilteredData(filtered);
   };
 
   const getRandomColor = () => {
@@ -81,11 +67,10 @@ const NewsEmotionsSingleGraph = () => {
         }
       },
       y: {
-        beginAtZero: false, // Remove the beginAtZero option
-        min: -1, // Set the minimum value of the scale to -1
-        max: 1, // Set the maximum value of the scale to 1
+        min: -1,
+        max: 1,
         ticks: {
-          stepSize: 0.2, // Set the step size of the ticks to 0.2
+          stepSize: 0.2,
           callback: (value) => {
             return value.toFixed(2);
           }
@@ -99,23 +84,28 @@ const NewsEmotionsSingleGraph = () => {
       }
     }
   };
-  
 
   return (
     <div>
-      {data && Object.entries(data).map(([newsSource, emotionData]) => (
+      <FilterComponent onFilter={handleFilter} />
+
+      {/* Render the chart using the filteredData */}
+      {filteredData && Object.entries(filteredData).map(([newsSource, emotionData]) => (
         <div key={newsSource}>
           <h2>{newsSource}</h2>
-          <Line data={{
-            labels: emotionData.date.map(date => dayjs(date).format('YYYY-MM-DD')),
-            datasets: [{
-              label: newsSource,
-              data: emotionData.compound,
-              fill: false,
-              borderColor: getRandomColor(),
-              tension: 0.1
-            }]
-          }} options={options} />
+          <Line
+            data={{
+              labels: emotionData.date.map(date => dayjs(date).format('YYYY-MM-DD')),
+              datasets: [{
+                label: newsSource,
+                data: emotionData.compound,
+                fill: false,
+                borderColor: getRandomColor(),
+                tension: 0.1
+              }]
+            }}
+            options={options}
+          />
         </div>
       ))}
     </div>
