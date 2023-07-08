@@ -1,22 +1,32 @@
-/** working graph to display multiple news channels graph */
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart, CategoryScale, LinearScale, LineController, PointElement, LineElement, TimeScale, TimeSeriesScale } from 'chart.js';
 import dayjs from 'dayjs';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-adapter-dayjs';
-import FilterComponent from './FilterComponent';
 
 Chart.register(CategoryScale, LinearScale, LineController, PointElement, LineElement, TimeScale, TimeSeriesScale, ChartDataLabels);
 
 const NewsEmotionsSingleGraph = () => {
   const [data, setData] = useState(null);
   const [filteredData, setFilteredData] = useState(null);
+  const [filterData, setFilterData] = useState({
+    date: '',
+    newsSource: '',
+    compoundValue: ''
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/getNewsEmotionsSingleGraphDB');
+        let url = 'http://localhost:5000/getNewsEmotionsSingleGraphDB';
+        const params = new URLSearchParams(filterData);
+
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url);
         const responseData = await response.json();
         setData(responseData);
         setFilteredData(responseData);
@@ -26,18 +36,39 @@ const NewsEmotionsSingleGraph = () => {
     };
 
     fetchData();
-  }, []);
+  }, [filterData]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFilterData((prevState) => ({ ...prevState, [name]: value }));
+  };
+
+  const handleFilter = () => {
+    // Perform filtering logic here if needed
+    // You can update the fetchData function to use the filtered data in the request
+    // For example, you can set the filterData state and let the useEffect fetch the filtered data
+    setFilteredData(data);
+  };
+
+  const handleReset = () => {
+    setFilterData({
+      date: '',
+      newsSource: '',
+      compoundValue: ''
+    });
+    setFilteredData(data);
+  };
 
   const createChartData = () => {
-    if (!data) return null;
+    if (!filteredData) return null;
 
     const chartData = {
       labels: [], // Dates
       datasets: [] // Emotion datasets for each news source
     };
 
-    for (const newsSource in data) {
-      const emotionData = data[newsSource];
+    for (const newsSource in filteredData) {
+      const emotionData = filteredData[newsSource];
 
       const emotionDataset = {
         label: newsSource,
@@ -50,8 +81,8 @@ const NewsEmotionsSingleGraph = () => {
       chartData.datasets.push(emotionDataset);
     }
 
-    const firstNewsSource = Object.keys(data)[0];
-    const firstEmotionData = data[firstNewsSource];
+    const firstNewsSource = Object.keys(filteredData)[0];
+    const firstEmotionData = filteredData[firstNewsSource];
     chartData.labels = firstEmotionData.date.map(date => dayjs(date).format('YYYY-MM-DD'));
 
     return chartData;
@@ -99,23 +130,34 @@ const NewsEmotionsSingleGraph = () => {
       }
     }
   };
-  
 
   return (
     <div>
-      {data && Object.entries(data).map(([newsSource, emotionData]) => (
+      <div>
+        <h3>Filter</h3>
+        <div>
+          <label>Date:</label>
+          <input type="text" name="date" value={filterData.date} onChange={handleInputChange} />
+        </div>
+        <div>
+          <label>News Source:</label>
+          <input type="text" name="newsSource" value={filterData.newsSource} onChange={handleInputChange} />
+        </div>
+        <div>
+          <label>Compound Value:</label>
+          <input type="text" name="compoundValue" value={filterData.compoundValue} onChange={handleInputChange} />
+        </div>
+        <button onClick={handleFilter}>Apply Filter</button>
+        <button onClick={handleReset}>Reset</button>
+      </div>
+
+      {filteredData && Object.entries(filteredData).map(([newsSource, emotionData]) => (
         <div key={newsSource}>
           <h2>{newsSource}</h2>
-          <Line data={{
-            labels: emotionData.date.map(date => dayjs(date).format('YYYY-MM-DD')),
-            datasets: [{
-              label: newsSource,
-              data: emotionData.compound,
-              fill: false,
-              borderColor: getRandomColor(),
-              tension: 0.1
-            }]
-          }} options={options} />
+          <Line
+            data={createChartData()}
+            options={options}
+          />
         </div>
       ))}
     </div>
