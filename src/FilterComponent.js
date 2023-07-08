@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -6,17 +6,53 @@ const FilterComponent = ({ onFilter }) => {
   const [filterData, setFilterData] = useState({
     startDate: null,
     endDate: null,
-    newsSource: '',
-    compoundValue: ''
+    compoundValue: '',
+    newsSources: []
   });
+
+  useEffect(() => {
+    const fetchNewsSources = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/getNewsChannels');
+        const responseData = await response.json();
+        setFilterData(prevState => ({
+          ...prevState,
+          newsSources: responseData
+        }));
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+    fetchNewsSources();
+  }, []);
+
+  const handleDateChange = (name, date) => {
+    setFilterData(prevState => ({
+      ...prevState,
+      [name]: date
+    }));
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFilterData((prevState) => ({ ...prevState, [name]: value }));
+    setFilterData(prevState => ({ ...prevState, [name]: value }));
   };
 
-  const handleDateChange = (name, date) => {
-    setFilterData((prevState) => ({ ...prevState, [name]: date }));
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    let updatedSources = [];
+
+    if (checked) {
+      updatedSources = [...filterData.newsSources, name];
+    } else {
+      updatedSources = filterData.newsSources.filter(source => source !== name);
+    }
+
+    setFilterData(prevState => ({
+      ...prevState,
+      newsSources: updatedSources
+    }));
   };
 
   const handleFilter = () => {
@@ -27,40 +63,15 @@ const FilterComponent = ({ onFilter }) => {
     setFilterData({
       startDate: null,
       endDate: null,
-      newsSource: '',
-      compoundValue: ''
+      compoundValue: '',
+      newsSources: []
     });
     onFilter({});
   };
 
   return (
     <div className="filter-container">
-      <h3 className="filter-heading">Filter</h3>
-      <div className="filter-row">
-        <label>Start Date:</label>
-        <DatePicker
-          selected={filterData.startDate}
-          onChange={(date) => handleDateChange('startDate', date)}
-          className="filter-datepicker"
-        />
-      </div>
-      <div className="filter-row">
-        <label>End Date:</label>
-        <DatePicker
-          selected={filterData.endDate}
-          onChange={(date) => handleDateChange('endDate', date)}
-          className="filter-datepicker"
-        />
-      </div>
-      <div className="filter-row">
-        <label>News Source:</label>
-        <input
-          type="text"
-          name="newsSource"
-          value={filterData.newsSource}
-          onChange={handleInputChange}
-        />
-      </div>
+      <h3>Filter</h3>
       <div className="filter-row">
         <label>Compound Value:</label>
         <input
@@ -70,7 +81,41 @@ const FilterComponent = ({ onFilter }) => {
           onChange={handleInputChange}
         />
       </div>
-      <div className="filter-button-row">
+      <div className="filter-row">
+        <label>Start Date:</label>
+        <DatePicker
+          name="startDate"
+          selected={filterData.startDate}
+          onChange={date => handleDateChange('startDate', date)}
+          dateFormat="yyyy-MM-dd"
+          className="date-picker"
+        />
+      </div>
+      <div className="filter-row">
+        <label>End Date:</label>
+        <DatePicker
+          name="endDate"
+          selected={filterData.endDate}
+          onChange={date => handleDateChange('endDate', date)}
+          dateFormat="yyyy-MM-dd"
+          className="date-picker"
+        />
+      </div>
+      <div className="filter-row">
+        <label>News Sources:</label>
+        {filterData.newsSources.map(source => (
+          <div key={source}>
+            <input
+              type="checkbox"
+              name={source}
+              checked={filterData.newsSources.includes(source)}
+              onChange={handleCheckboxChange}
+            />
+            <label>{source}</label>
+          </div>
+        ))}
+      </div>
+      <div className="filter-row">
         <button className="filter-button apply-button" onClick={handleFilter}>
           Apply Filter
         </button>

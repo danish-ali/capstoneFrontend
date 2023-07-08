@@ -116,3 +116,13 @@
   background-color: #005cbf;
 }
 
+.filter-container .filter-row .checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.filter-container .filter-row .checkbox-wrapper input[type="checkbox"] {
+  margin-right: 5px;
+}
+
