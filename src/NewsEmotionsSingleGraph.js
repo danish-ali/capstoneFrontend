@@ -4,59 +4,43 @@ import { Chart, CategoryScale, LinearScale, LineController, PointElement, LineEl
 import dayjs from 'dayjs';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import 'chartjs-adapter-dayjs';
+import FilterComponent from './FilterComponent';
 
 Chart.register(CategoryScale, LinearScale, LineController, PointElement, LineElement, TimeScale, TimeSeriesScale, ChartDataLabels);
 
 const NewsEmotionsSingleGraph = () => {
   const [data, setData] = useState(null);
   const [filteredData, setFilteredData] = useState(null);
-  const [filterData, setFilterData] = useState({
-    date: '',
-    newsSource: '',
-    compoundValue: ''
-  });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let url = 'http://localhost:5000/getNewsEmotionsSingleGraphDB';
-        const params = new URLSearchParams(filterData);
-
-        if (params.toString()) {
-          url += `?${params.toString()}`;
-        }
-
-        const response = await fetch(url);
-        const responseData = await response.json();
-        setData(responseData);
-        setFilteredData(responseData);
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    };
-
     fetchData();
-  }, [filterData]);
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFilterData((prevState) => ({ ...prevState, [name]: value }));
+  const fetchData = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/getNewsEmotionsSingleGraphDB');
+      const responseData = await response.json();
+      setData(responseData);
+      setFilteredData(responseData);
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
-  const handleFilter = () => {
-    // Perform filtering logic here if needed
-    // You can update the fetchData function to use the filtered data in the request
-    // For example, you can set the filterData state and let the useEffect fetch the filtered data
-    setFilteredData(data);
-  };
+  const handleFilter = (filterData) => {
+    // Apply the filtering logic based on the filterData
+    // Update the filteredData state with the filtered data
 
-  const handleReset = () => {
-    setFilterData({
-      date: '',
-      newsSource: '',
-      compoundValue: ''
+    // Example filtering logic:
+    const filtered = data.filter((item) => {
+      const matchDate = filterData.date ? dayjs(item.date).format('YYYY-MM-DD') === filterData.date : true;
+      const matchNewsSource = filterData.newsSource ? item.newsSource === filterData.newsSource : true;
+      const matchCompound = filterData.compound ? item.compound === parseFloat(filterData.compound) : true;
+
+      return matchDate && matchNewsSource && matchCompound;
     });
-    setFilteredData(data);
+
+    setFilteredData(filtered);
   };
 
   const createChartData = () => {
@@ -83,7 +67,7 @@ const NewsEmotionsSingleGraph = () => {
 
     const firstNewsSource = Object.keys(filteredData)[0];
     const firstEmotionData = filteredData[firstNewsSource];
-    chartData.labels = firstEmotionData.date.map(date => dayjs(date).format('YYYY-MM-DD'));
+    chartData.labels = firstEmotionData.date.map((date) => dayjs(date).format('YYYY-MM-DD'));
 
     return chartData;
   };
@@ -112,13 +96,18 @@ const NewsEmotionsSingleGraph = () => {
         }
       },
       y: {
-        beginAtZero: false, // Remove the beginAtZero option
-        min: -1, // Set the minimum value of the scale to -1
-        max: 1, // Set the maximum value of the scale to 1
+        min: -1,
+        max: 1,
         ticks: {
-          stepSize: 0.2, // Set the step size of the ticks to 0.2
+          stepSize: 0.2,
           callback: (value) => {
-            return value.toFixed(2);
+            if (value === 0) {
+              return 'Neutral';
+            } else if (value < 0) {
+              return 'Negative';
+            } else {
+              return 'Positive';
+            }
           }
         }
       }
@@ -133,33 +122,30 @@ const NewsEmotionsSingleGraph = () => {
 
   return (
     <div>
-      <div>
-        <h3>Filter</h3>
-        <div>
-          <label>Date:</label>
-          <input type="text" name="date" value={filterData.date} onChange={handleInputChange} />
-        </div>
-        <div>
-          <label>News Source:</label>
-          <input type="text" name="newsSource" value={filterData.newsSource} onChange={handleInputChange} />
-        </div>
-        <div>
-          <label>Compound Value:</label>
-          <input type="text" name="compoundValue" value={filterData.compoundValue} onChange={handleInputChange} />
-        </div>
-        <button onClick={handleFilter}>Apply Filter</button>
-        <button onClick={handleReset}>Reset</button>
-      </div>
+      <FilterComponent onFilter={handleFilter} />
 
-      {filteredData && Object.entries(filteredData).map(([newsSource, emotionData]) => (
-        <div key={newsSource}>
-          <h2>{newsSource}</h2>
-          <Line
-            data={createChartData()}
-            options={options}
-          />
-        </div>
-      ))}
+      {/* Render the chart using the filteredData */}
+      {filteredData &&
+        Object.entries(filteredData).map(([newsSource, emotionData]) => (
+          <div key={newsSource}>
+            <h2>{newsSource}</h2>
+            <Line
+              data={{
+                labels: emotionData.date.map((date) => dayjs(date).format('YYYY-MM-DD')),
+                datasets: [
+                  {
+                    label: newsSource,
+                    data: emotionData.compound,
+                    fill: false,
+                    borderColor: getRandomColor(),
+                    tension: 0.1
+                  }
+                ]
+              }}
+              options={options}
+            />
+          </div>
+        ))}
     </div>
   );
 };
