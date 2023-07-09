@@ -28,8 +28,19 @@ const NewsEmotionsSingleGraph = () => {
 
   const handleFilter = async (filterData) => {
     try {
-      const params = new URLSearchParams(filterData).toString();
-      const response = await fetch(`http://localhost:5000/getNewsEmotionsSingleGraphDB?${params}`);
+      const queryParams = {
+        startDate: filterData.startDate || '',
+        endDate: filterData.endDate || '',
+        compoundValue: filterData.compoundValue || '',
+        newsSources: encodeURIComponent(JSON.stringify(filterData.newsSources))
+      };
+  
+      const queryString = Object.keys(queryParams)
+        .map(key => `${key}=${queryParams[key]}`)
+        .join('&');
+  
+      const url = `http://localhost:5000/getNewsEmotionsSingleGraphDB?${queryString}`;
+      const response = await fetch(url);
       const responseData = await response.json();
       setFilteredData(responseData);
     } catch (error) {
