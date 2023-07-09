@@ -1,11 +1,11 @@
 import React from 'react';
-
+import Heading from './Heading';
 import NewsEmotionsSingleGraph from './NewsEmotionsSingleGraph';
 
 const App = () => {
   return (
     <div>
-      <h1>News Graph</h1>
+      <Heading />
       
       <NewsEmotionsSingleGraph />
     </div>
