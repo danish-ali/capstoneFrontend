@@ -98,16 +98,18 @@ const NewsEmotionsSingleGraph = () => {
 
   const handleClick = (elements) => {
     if (elements && elements.length > 0) {
+      console.log('elements', elements);
       const { index } = elements[0];
-      console.log('Filtered Data:', filteredData);
-      console.log('Index:', index);
-      const selectedSentiment = index === 0 ? 'positive' : 'negative';  
-      const newsSources = Object.keys(filteredData);
-      console.log('newsSources:', newsSources);
-      const selectedNewsSource = newsSources[0];    
+      console.log('index', index);
       
-      setSelectedSentiment(selectedSentiment);
+      const newsSources = Object.keys(filteredData);
+      console.log('newssource', newsSources);
+      const selectedNewsSource = newsSources[index];
+      console.log('Selected News Source:', selectedNewsSource);
+      const selectedSentiment = index === 0 ? 'positive' : 'negative';
+
       setSelectedNewsSource(selectedNewsSource);
+      setSelectedSentiment(selectedSentiment);
       fetchNewsContent(selectedNewsSource, selectedSentiment);
     }
   };
@@ -143,25 +145,25 @@ const NewsEmotionsSingleGraph = () => {
                 />
               </div>
             )}
+            {selectedNewsSource === newsSource && selectedSentiment && Array.isArray(newsContent) && newsContent.length > 0 && (
+              <div>
+                <h3>News Content:</h3>
+                <ul>
+                  {newsContent.map((item, index) => (
+                    <li key={index}>
+                      <div>
+                        <strong>Date:</strong> {dayjs(item.date).format('YYYY-MM-DD')}
+                      </div>
+                      <div>
+                        <strong>Content:</strong> {item.content}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ))}
-        {selectedNewsSource && selectedSentiment && Array.isArray(newsContent) && newsContent.length > 0 && (
-  <div>
-    <h3>News Content:</h3>
-    <ul>
-      {newsContent.map((item, index) => (
-        <li key={index}>
-          <div>
-            <strong>Date:</strong> {dayjs(item.date).format('YYYY-MM-DD')}
-          </div>
-          <div>
-            <strong>Content:</strong> {item.content}
-          </div>
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
     </div>
   );
 };
